@@ -1,4 +1,5 @@
 import livro from "../models/Livro.js";
+import { autor } from "../models/Autor.js";
 class LivroController {
   static async listarLivros(req, res) {
     try {
@@ -46,13 +47,34 @@ class LivroController {
   }
 
   static async cadastrarLivro(req, res) {
+    const novoLivro = req.body;
     try {
-      const novoLivro = await livro.create(req.body);
+      const autorEncontrado = await autor.findById(novoLivro.autor);
+      if (!autorEncontrado) {
+        return res.status(404).json({ message: "Autor não encontrado" });
+      }
+      const livroCompleto = {
+        ...novoLivro,
+        autor: { ...autorEncontrado._doc },
+      };
+      const licroCriado = await livro.create(livroCompleto);
       res.status(201).json({ message: "Criado com sucesso", livro: novoLivro });
     } catch (error) {
       res
         .status(500)
         .json({ message: `Erro ao criar o livro: ${error.message}` });
+    }
+  }
+
+  static async listarLivrosPorEditora(req, res) {
+    try {
+      const editora = req.query.editora;
+      const livrosPorEditora = await livro.find({ editora: editora });
+      res.status(200).json(livrosPorEditora);
+    } catch (error) {
+      res
+        .status(500)
+        .json({ message: `Erro ao listar os livros: ${error.message}` });
     }
   }
 }
